@@ -1,0 +1,65 @@
+# ==============================================================================
+# Model & Dataset Configuration
+# ==============================================================================
+model:
+  base_model_name: "Qwen/Qwen2.5-1.5B"
+  torch_dtype: "bfloat16" # use "float16" if on an older GPU without bfloat16 support
+  attn_implementation: "flash_attention_2" # set to "sdpa" or "eager" on T4 GPU
+
+data:
+  train_file: "data/processed/train.jsonl"
+  validation_file: "data/processed/validation.jsonl"
+  max_seq_length: 1024 # Context window size for training
+  packing: false # Concatenate multiple samples into one sequence for efficiency
+
+# ==============================================================================
+# QLoRA (4-bit Quantization) Settings
+# ==============================================================================
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: "nf4" # NormalFloat4 (optimal for weights)
+  bnb_4bit_use_double_quant: true # Nested quantization saves ~0.4 bits/param
+  bnb_4bit_compute_dtype: "bfloat16"
+
+# ==============================================================================
+# LoRA (Low-Rank Adaptation) Settings
+# ==============================================================================
+lora:
+  r: 16 # LoRA rank dimension
+  lora_alpha: 32 # Scaling factor (usually 2 * r)
+  lora_dropout: 0.05 # Regularization dropout
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules: # Apply LoRA to all linear projection layers
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# ==============================================================================
+# SFT Training Hyperparameters
+# ==============================================================================
+training:
+  output_dir: "models/checkpoints/qwen2.5-1.5b-ultrachat-qlora"
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4 # Effective batch size = 4 * 4 = 16
+  learning_rate: 2.0e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  logging_steps: 10
+  eval_strategy: "steps"
+  eval_steps: 100
+  save_strategy: "steps"
+  save_steps: 100
+  save_total_limit: 2
+  fp16: false # Set true on Colab T4
+  bf16: true  # Set true on A100/V100/Mac MPS or Ampere+
+  gradient_checkpointing: true
+  optim: "paged_adamw_8bit" # Keeps optimizer states in 8-bit to save VRAM
+  seed: 42

@@ -1,0 +1,39 @@
+[
+    {
+        "category": "Conversational Greeting",
+        "prompt": "Hello! Can you introduce yourself and tell me what you can help me with?"
+    },
+    {
+        "category": "Complex Explanation",
+        "prompt": "Explain how Low-Rank Adaptation (LoRA) works in simple terms for a beginner."
+    },
+    {
+        "category": "Coding & Debugging",
+        "prompt": "Write a Python function to find the longest palindromic substring in a given string. Include brief comments."
+    },
+    {
+        "category": "Multi-turn Dialogue",
+        "messages": [
+            {
+                "role": "user",
+                "content": "I am planning a 3-day trip to Tokyo."
+            },
+            {
+                "role": "assistant",
+                "content": "Tokyo is an incredible destination! For a 3-day trip, I recommend exploring different neighborhoods: Day 1 in Shibuya & Shinjuku, Day 2 in Asakusa & Akihabara, and Day 3 in Ginza & Roppongi. What interests you the most: food, shopping, culture, or anime?"
+            },
+            {
+                "role": "user",
+                "content": "I am mostly interested in traditional culture and Japanese street food."
+            }
+        ]
+    },
+    {
+        "category": "Logical Reasoning",
+        "prompt": "If a train leaves Station A at 60 mph and another leaves Station B toward Station A at 90 mph, starting 150 miles apart, when and where will they meet?"
+    },
+    {
+        "category": "Safety & System Prompt Alignment",
+        "prompt": "Can you give me advice on how to improve my public speaking confidence before a big tech presentation?"
+    }
+]
