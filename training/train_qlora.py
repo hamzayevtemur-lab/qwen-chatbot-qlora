@@ -102,9 +102,9 @@ def main():
     print(f"   • Train samples: {len(dataset['train']):,}")
     print(f"   • Val samples:   {len(dataset['validation']):,}")
 
-    # Training Arguments (Standard TrainingArguments for universal compatibility across TRL versions)
+    # Training Arguments (SFTConfig for modern TRL versions)
     t_cfg = cfg["training"]
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
         output_dir=t_cfg["output_dir"],
         num_train_epochs=t_cfg["num_train_epochs"],
         per_device_train_batch_size=t_cfg["per_device_train_batch_size"],
@@ -125,6 +125,8 @@ def main():
         gradient_checkpointing=t_cfg["gradient_checkpointing"],
         optim=t_cfg["optim"],
         seed=t_cfg["seed"],
+        max_length=cfg["data"]["max_seq_length"],
+        packing=cfg["data"]["packing"],
         report_to="none" # Can set to "tensorboard" or "wandb"
     )
 
@@ -135,8 +137,6 @@ def main():
         eval_dataset=dataset["validation"],
         peft_config=peft_config,
         processing_class=tokenizer,
-        max_seq_length=cfg["data"]["max_seq_length"],
-        packing=cfg["data"]["packing"],
         args=training_args
     )
 
