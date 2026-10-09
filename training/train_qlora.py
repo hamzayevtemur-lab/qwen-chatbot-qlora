@@ -69,11 +69,12 @@ def main():
         trust_remote_code=True
     )
 
-    # Prepare Model for LoRA k-bit Training
-    model=prepare_model_for_kbit_training(
+    # 5. Prepare Model for LoRA k-bit Training
+    model = prepare_model_for_kbit_training(
         model,
         use_gradient_checkpointing=cfg["training"]["gradient_checkpointing"]
     )
+    model.config.use_cache = False  # Disable KV cache during training (required for gradient checkpointing)
 
     # 6. Configure PEFT / LoRA
     lora_cfg = cfg["lora"]
