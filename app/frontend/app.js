@@ -210,7 +210,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
         } catch (err) {
-            fullReply += `\n\n⚠️ *${err.message}*`;
+            if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
+                fullReply += "\n\n⚠️ **Authentication Required:** Please paste your free Hugging Face Token in the left sidebar under *HUGGING FACE TOKEN* so Hugging Face can run inference for you.";
+            } else {
+                fullReply += `\n\n⚠️ *${err.message}*`;
+            }
             assistantBubble.innerHTML = marked.parse(fullReply);
         } finally {
             cursor.remove();
