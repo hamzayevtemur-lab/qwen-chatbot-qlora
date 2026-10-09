@@ -105,13 +105,10 @@ async def chat_stream_endpoint(request: ChatRequest):
 
 
 # Mount Frontend Static Directory
-frontend_dir=Path(__file__).parent/"frontend"
+frontend_dir = Path(__file__).parent / "frontend"
 if frontend_dir.exists():
     app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
-
-    @app.get("/", response_class=HTMLResponse)
-    async def serve_index():
-        return FileResponse(frontend_dir / "index.html")
+    app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 
 
         

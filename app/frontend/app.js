@@ -12,6 +12,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const tempValue = document.getElementById("tempValue");
     const maxTokensSlider = document.getElementById("maxTokensSlider");
     const maxTokensValue = document.getElementById("maxTokensValue");
+    const hfTokenInput = document.getElementById("hfTokenInput");
+    const statusText = document.getElementById("statusText");
+
+    const HF_MODEL_ID = "TemurbekHamzaev/qwen2.5-1.5b-chatbot";
+    const HF_ROUTER_URL = "https://router.huggingface.co/hf-inference/v1/chat/completions";
+
+    // Load saved HF Token from localStorage
+    if (hfTokenInput) {
+        hfTokenInput.value = localStorage.getItem("hf_token") || "";
+        hfTokenInput.addEventListener("input", (e) => {
+            localStorage.setItem("hf_token", e.target.value.trim());
+        });
+    }
 
     // State
     let conversationHistory = [];
@@ -80,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return bubble;
     };
 
-    // Chat Form Submission (SSE Stream)
+    // Chat Form Submission
     chatForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const prompt = userInput.value.trim();
@@ -109,19 +122,53 @@ document.addEventListener("DOMContentLoaded", () => {
             ...conversationHistory
         ];
 
+        const token = (hfTokenInput ? hfTokenInput.value.trim() : "") || localStorage.getItem("hf_token") || "";
+
         try {
-            const response = await fetch("/api/chat/stream", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    messages: payloadMessages,
-                    max_tokens: parseInt(maxTokensSlider.value),
-                    temperature: parseFloat(tempSlider.value)
-                })
-            });
+            // Determine if running locally with FastAPI or standalone on HF Spaces
+            const isLocalBackend = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+            let response;
+
+            if (isLocalBackend) {
+                // Local FastAPI SSE Stream
+                response = await fetch("/api/chat/stream", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        messages: payloadMessages,
+                        max_tokens: parseInt(maxTokensSlider.value),
+                        temperature: parseFloat(tempSlider.value)
+                    })
+                });
+            } else {
+                // Hugging Face Router Serverless Streaming API
+                const headers = { "Content-Type": "application/json" };
+                if (token) {
+                    headers["Authorization"] = `Bearer ${token}`;
+                }
+
+                response = await fetch(HF_ROUTER_URL, {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify({
+                        model: HF_MODEL_ID,
+                        messages: payloadMessages,
+                        max_tokens: parseInt(maxTokensSlider.value),
+                        temperature: parseFloat(tempSlider.value),
+                        stream: true
+                    })
+                });
+            }
 
             if (!response.ok) {
-                throw new Error(`Server returned HTTP ${response.status}`);
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error("Hugging Face authorization required. Please paste your free HF Access Token in the sidebar settings.");
+                } else if (response.status === 503) {
+                    throw new Error("Model is currently loading onto Hugging Face serverless hardware. Please wait ~15 seconds and send again!");
+                } else {
+                    const errBody = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errBody.slice(0, 150)}`);
+                }
             }
 
             // Read SSE stream
@@ -138,24 +185,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 buffer = lines.pop(); // keep last unfinished line
 
                 for (const line of lines) {
-                    if (line.startsWith("data:")) {
+                    const trimmed = line.trim();
+                    if (!trimmed || trimmed.startsWith(":")) continue;
+
+                    if (trimmed.startsWith("data:")) {
+                        const rawData = trimmed.replace("data:", "").trim();
+                        if (rawData === "[DONE]") break;
+
                         try {
-                            const data = JSON.parse(line.replace("data:", "").trim());
-                            if (data.token) {
-                                fullReply += data.token;
+                            const data = JSON.parse(rawData);
+                            // Support both local token format and OpenAI/HF delta format
+                            const tokenDelta = data.token || data.choices?.[0]?.delta?.content || "";
+                            if (tokenDelta) {
+                                fullReply += tokenDelta;
                                 assistantBubble.innerHTML = marked.parse(fullReply);
                                 assistantBubble.appendChild(cursor);
                                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
                             }
                         } catch (err) {
-                            // ignore parse errors on heartbeat/keep-alive
+                            // ignore partial JSON parse error
                         }
                     }
                 }
             }
 
         } catch (err) {
-            fullReply += `\n\n*(Error connecting to inference engine: ${err.message})*`;
+            fullReply += `\n\n⚠️ *${err.message}*`;
             assistantBubble.innerHTML = marked.parse(fullReply);
         } finally {
             cursor.remove();

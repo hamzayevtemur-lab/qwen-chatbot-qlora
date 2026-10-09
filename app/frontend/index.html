@@ -19,7 +19,7 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -29,10 +29,12 @@
         <!-- Sidebar / Settings Drawer -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="brand-badge">
-                    <span class="pulse-dot"></span>
-                    <span class="brand-title">Qwen2.5-1.5B</span>
-                </div>
+                <a href="https://huggingface.co/TemurbekHamzaev/qwen2.5-1.5b-chatbot" target="_blank" class="brand-link" title="View Model on Hugging Face">
+                    <div class="brand-badge">
+                        <span class="pulse-dot"></span>
+                        <span class="brand-title">Qwen2.5-1.5B</span>
+                    </div>
+                </a>
                 <span class="badge-qlora">QLoRA SFT</span>
             </div>
 
@@ -66,12 +68,21 @@
                     </div>
                     <input type="range" id="maxTokensSlider" min="64" max="1536" step="64" value="512">
                 </div>
+
+                <div class="settings-group">
+                    <div class="slider-header">
+                        <label for="hfTokenInput">Hugging Face Token</label>
+                        <span class="badge-optional">Optional</span>
+                    </div>
+                    <input type="password" id="hfTokenInput" placeholder="hf_... (for unlimited inference)" class="token-input">
+                    <small class="token-hint">Stored locally in your browser</small>
+                </div>
             </div>
 
             <div class="sidebar-footer">
                 <div class="status-indicator">
                     <span class="status-dot green"></span>
-                    <span class="status-text">Backend Connected</span>
+                    <span id="statusText" class="status-text">Serverless API Ready</span>
                 </div>
             </div>
         </aside>
@@ -142,7 +153,7 @@
 
     </div>
 
-    <script src="/static/app.js"></script>
+    <script src="app.js"></script>
 </body>
 
 </html>
