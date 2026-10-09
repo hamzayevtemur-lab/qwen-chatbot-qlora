@@ -50,7 +50,7 @@ training:
   gradient_accumulation_steps: 4 # Effective batch size = 4 * 4 = 16
   learning_rate: 2.0e-4
   lr_scheduler_type: "cosine"
-  warmup_ratio: 0.03
+  warmup_steps: 20
   weight_decay: 0.01
   logging_steps: 10
   eval_strategy: "steps"

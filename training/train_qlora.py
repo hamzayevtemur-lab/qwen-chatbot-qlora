@@ -112,7 +112,7 @@ def main():
         gradient_accumulation_steps=t_cfg["gradient_accumulation_steps"],
         learning_rate=float(t_cfg["learning_rate"]),
         lr_scheduler_type=t_cfg["lr_scheduler_type"],
-        warmup_ratio=t_cfg["warmup_ratio"],
+        warmup_steps=t_cfg.get("warmup_steps", 20),
         weight_decay=t_cfg["weight_decay"],
         logging_steps=t_cfg["logging_steps"],
         eval_strategy=t_cfg["eval_strategy"],
