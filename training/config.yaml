@@ -9,7 +9,7 @@ model:
 data:
   train_file: "data/processed/train.jsonl"
   validation_file: "data/processed/validation.jsonl"
-  max_seq_length: 1024 # Context window size for training
+  max_seq_length: 512 # Context window size (512 is 4x faster than 1024)
   packing: false # Concatenate multiple samples into one sequence for efficiency
 
 # ==============================================================================
@@ -44,19 +44,19 @@ lora:
 # ==============================================================================
 training:
   output_dir: "models/checkpoints/qwen2.5-1.5b-ultrachat-qlora"
-  num_train_epochs: 3
-  per_device_train_batch_size: 4
-  per_device_eval_batch_size: 4
-  gradient_accumulation_steps: 4 # Effective batch size = 4 * 4 = 16
+  num_train_epochs: 1 # 1 epoch is standard for SFT instruction alignment
+  per_device_train_batch_size: 8 # Utilize T4 GPU VRAM capacity
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 2 # Effective batch size = 8 * 2 = 16
   learning_rate: 2.0e-4
   lr_scheduler_type: "cosine"
-  warmup_steps: 20
+  warmup_steps: 10
   weight_decay: 0.01
   logging_steps: 10
   eval_strategy: "steps"
-  eval_steps: 100
+  eval_steps: 50
   save_strategy: "steps"
-  save_steps: 100
+  save_steps: 50
   save_total_limit: 2
   fp16: false # In 4-bit QLoRA, BitsAndBytes handles 16-bit math natively; disabling fp16 prevents GradScaler crashes
   bf16: false  # T4 does not support bfloat16 GEMM
