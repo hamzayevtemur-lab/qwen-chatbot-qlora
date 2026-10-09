@@ -75,9 +75,9 @@ def main():
         use_gradient_checkpointing=cfg["training"]["gradient_checkpointing"]
     )
 
-    # Configure PEFT/LoRA
-    lora_cfg=cfg["lora"]
-    peft_config=LoraConfig(
+    # 6. Configure PEFT / LoRA
+    lora_cfg = cfg["lora"]
+    peft_config = LoraConfig(
         r=lora_cfg["r"],
         lora_alpha=lora_cfg["lora_alpha"],
         lora_dropout=lora_cfg["lora_dropout"],
@@ -86,10 +86,7 @@ def main():
         target_modules=lora_cfg["target_modules"]
     )
 
-    model=get_peft_model(model, peft_config)
-    model.print_trainable_parameters()
-
-    # Load Processed Datasets
+    # 7. Load Processed Datasets
     print("\n📂 Loading Processed Datasets...")
     dataset = load_dataset(
         "json",
@@ -130,7 +127,7 @@ def main():
         report_to="none" # Can set to "tensorboard" or "wandb"
     )
 
-    # Initialize SFT Trainer
+    # Initialize SFT Trainer (SFTTrainer wraps the model with peft_config internally)
     trainer = SFTTrainer(
         model=model,
         train_dataset=dataset["train"],
