@@ -65,13 +65,27 @@ def main():
         tokenizer.pad_token=tokenizer.eos_token
         
     print(f"📦 Loading 4-bit Quantized Base Model: {model_id}...")
-    model=AutoModelForCausalLM.from_pretrained(
-        model_id,
-        quantization_config=bnb_config if torch.cuda.is_available() else None,
-        torch_dtype=compute_dtype,
-        device_map=device_map,
-        trust_remote_code=True
-    )
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            quantization_config=bnb_config if torch.cuda.is_available() else None,
+            dtype=compute_dtype,
+            device_map=device_map,
+            trust_remote_code=True
+        )
+    except TypeError:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            quantization_config=bnb_config if torch.cuda.is_available() else None,
+            torch_dtype=compute_dtype,
+            device_map=device_map,
+            trust_remote_code=True
+        )
+
+    # Cast any non-quantized BFloat16 weights (e.g. embeddings/norm) to compute_dtype
+    for param in model.parameters():
+        if param.dtype == torch.bfloat16:
+            param.data = param.data.to(compute_dtype)
 
     # 5. Prepare Model for LoRA k-bit Training
     model = prepare_model_for_kbit_training(
@@ -105,6 +119,9 @@ def main():
     print(f"   • Val samples:   {len(dataset['validation']):,}")
 
     # Training Arguments (SFTConfig for modern TRL versions)
+    # Note: fp16 and bf16 are disabled here because BitsAndBytes handles 16-bit
+    # computations natively via bnb_4bit_compute_dtype. Disabling fp16 eliminates
+    # PyTorch's GradScaler, which crashes on BFloat16/mixed-type gradients on T4 GPUs.
     t_cfg = cfg["training"]
     training_args = SFTConfig(
         output_dir=t_cfg["output_dir"],
@@ -122,8 +139,8 @@ def main():
         save_strategy=t_cfg["save_strategy"],
         save_steps=t_cfg["save_steps"],
         save_total_limit=t_cfg["save_total_limit"],
-        fp16=(compute_dtype == torch.float16),
-        bf16=(compute_dtype == torch.bfloat16),
+        fp16=False,
+        bf16=False,
         gradient_checkpointing=t_cfg["gradient_checkpointing"],
         optim=t_cfg["optim"],
         seed=t_cfg["seed"],
