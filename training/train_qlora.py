@@ -31,12 +31,16 @@ def main():
 
     # Determine Compute Dtype and Device
     if torch.cuda.is_available():
-        device_map="auto"
-        compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-
+        device_map = "auto"
+        # Tesla T4 is compute capability 7.5 (requires float16; bfloat16 is Ampere 8.0+)
+        major_cc = torch.cuda.get_device_capability()[0]
+        if major_cc >= 8:
+            compute_dtype = torch.bfloat16
+        else:
+            compute_dtype = torch.float16
     else:
-        device_map=None 
-        compute_dtype=torch.float32
+        device_map = None 
+        compute_dtype = torch.float32
 
     # Setup 4-bit BitsAndBytes Quantization
     bnb_config=BitsAndBytesConfig(

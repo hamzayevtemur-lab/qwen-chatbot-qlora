@@ -3,8 +3,8 @@
 # ==============================================================================
 model:
   base_model_name: "Qwen/Qwen2.5-1.5B"
-  torch_dtype: "bfloat16" # use "float16" if on an older GPU without bfloat16 support
-  attn_implementation: "flash_attention_2" # set to "sdpa" or "eager" on T4 GPU
+  torch_dtype: "float16" # use "float16" on Colab T4 GPU (compute capability 7.5)
+  attn_implementation: "sdpa" # use "sdpa" or "eager" on T4 GPU
 
 data:
   train_file: "data/processed/train.jsonl"
@@ -19,7 +19,7 @@ quantization:
   load_in_4bit: true
   bnb_4bit_quant_type: "nf4" # NormalFloat4 (optimal for weights)
   bnb_4bit_use_double_quant: true # Nested quantization saves ~0.4 bits/param
-  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_compute_dtype: "float16"
 
 # ==============================================================================
 # LoRA (Low-Rank Adaptation) Settings
@@ -58,8 +58,8 @@ training:
   save_strategy: "steps"
   save_steps: 100
   save_total_limit: 2
-  fp16: false # Set true on Colab T4
-  bf16: true  # Set true on A100/V100/Mac MPS or Ampere+
+  fp16: true # Set true on Colab T4
+  bf16: false  # T4 does not support bfloat16 GEMM
   gradient_checkpointing: true
   optim: "paged_adamw_8bit" # Keeps optimizer states in 8-bit to save VRAM
   seed: 42
