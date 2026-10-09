@@ -68,10 +68,17 @@ def main():
     )
 
     # 3. Load LoRA Adapter onto Base Model
-    print(f"🎯 Step 2/4: Attaching LoRA Adapter from {args.adapter_path}...")
+    adapter_path = Path(args.adapter_path).resolve()
+    if not adapter_path.exists():
+        raise FileNotFoundError(
+            f"❌ Adapter directory not found at: {adapter_path}\n"
+            "Please run 'python training/train_qlora.py' first to train and save the adapter!"
+        )
+
+    print(f"🎯 Step 2/4: Attaching LoRA Adapter from {adapter_path}...")
     peft_model = PeftModel.from_pretrained(
         base_model,
-        args.adapter_path,
+        str(adapter_path),
         torch_dtype=torch_dtype
     )
 
