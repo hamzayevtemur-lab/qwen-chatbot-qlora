@@ -28,7 +28,14 @@ class ChatModelService:
 
     def load_model(self):
         """Loads tokenizer and weights into memory."""
-        # Fallback to base model if merged model not yet generated
+        # Check environment variable, local directory, or fallback to Hugging Face Hub
+        model_env = os.environ.get("MODEL_PATH") or os.environ.get("MODEL_ID")
+        if model_env:
+            target_path = model_env
+        elif os.path.exists(self.model_path):
+            target_path = self.model_path
+        else:
+            target_path = "TemurbekHamzaev/qwen2.5-1.5b-chatbot"
 
         print(f"📦 [ModelService] Loading model from: {target_path} on {self.device} ({self.dtype})...")
         self.tokenizer = AutoTokenizer.from_pretrained(target_path, trust_remote_code=True)
